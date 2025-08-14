@@ -1,6 +1,6 @@
 # Akamai Usage Reporter → Cloudflare Migration Checklist
 
-[![CI](https://github.com/yourusername/akamai-usage-reporter/workflows/CI/badge.svg)](https://github.com/yourusername/akamai-usage-reporter/actions)
+[![CI](https://github.com/elif-globaldots/akamai-usage-reporter/workflows/CI/badge.svg)](https://github.com/elif-globaldots/akamai-usage-reporter/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://badge.fury.io/py/akamai-usage-reporter.svg)](https://badge.fury.io/py/akamai-usage-reporter)
@@ -22,7 +22,7 @@ A comprehensive CLI tool that analyzes your Akamai account (PAPI, AppSec, CPS, G
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/akamai-usage-reporter.git
+git clone https://github.com/elif-globaldots/akamai-usage-reporter.git
 cd akamai-usage-reporter
 
 # Create virtual environment
@@ -157,9 +157,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/akamai-usage-reporter/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/akamai-usage-reporter/discussions)
-- **Documentation**: [Wiki](https://github.com/yourusername/akamai-usage-reporter/wiki)
+- **Issues**: [GitHub Issues](https://github.com/elif-globaldots/akamai-usage-reporter/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/elif-globaldots/akamai-usage-reporter/discussions)
+- **Documentation**: [Wiki](https://github.com/elif-globaldots/akamai-usage-reporter/wiki)
 
 ## 🙏 Acknowledgments
 

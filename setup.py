@@ -13,7 +13,7 @@ setup(
     description="A CLI tool that analyzes Akamai account usage and generates Cloudflare migration checklists",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/akamai-usage-reporter",
+    url="https://github.com/elif-globaldots/akamai-usage-reporter",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -39,8 +39,8 @@ setup(
     },
     keywords="akamai, cloudflare, cdn, migration, cli, api",
     project_urls={
-        "Bug Reports": "https://github.com/yourusername/akamai-usage-reporter/issues",
-        "Source": "https://github.com/yourusername/akamai-usage-reporter",
-        "Documentation": "https://github.com/yourusername/akamai-usage-reporter#readme",
+        "Bug Reports": "https://github.com/elif-globaldots/akamai-usage-reporter/issues",
+        "Source": "https://github.com/elif-globaldots/akamai-usage-reporter",
+        "Documentation": "https://github.com/elif-globaldots/akamai-usage-reporter#readme",
     },
 )
