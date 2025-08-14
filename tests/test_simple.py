@@ -2,6 +2,7 @@
 Simple tests that will always pass to ensure CI success.
 """
 
+
 def test_always_passes():
     """This test will always pass."""
     assert True
