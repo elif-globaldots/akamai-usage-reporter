@@ -61,8 +61,18 @@ class ApiContext:
 
 
 def papi_list_properties(api: ApiContext) -> List[Dict[str, Any]]:
-    data = api.get("papi/v1/properties")
-    return data.get("properties", {}).get("items", [])
+    try:
+        print("Fetching properties from PAPI...", file=sys.stderr)
+        data = api.get("papi/v1/properties")
+        properties = data.get("properties", {}).get("items", [])
+        print(f"Found {len(properties)} properties", file=sys.stderr)
+        return properties
+    except Exception as e:
+        print(f"Error fetching properties: {e}", file=sys.stderr)
+        if hasattr(e, 'response') and hasattr(e.response, 'status_code'):
+            print(f"HTTP Status: {e.response.status_code}", file=sys.stderr)
+            print(f"Response: {e.response.text}", file=sys.stderr)
+        raise
 
 
 def papi_list_property_versions(
@@ -425,12 +435,23 @@ def build_api_context(
     client_token = env_or_none("AKAMAI_CLIENT_TOKEN")
     client_secret = env_or_none("AKAMAI_CLIENT_SECRET")
     access_token = env_or_none("AKAMAI_ACCESS_TOKEN")
+    
     if not all([host, client_token, client_secret, access_token]):
-        print(
-            "Missing EdgeGrid env vars. Please set AKAMAI_HOST, AKAMAI_CLIENT_TOKEN, AKAMAI_CLIENT_SECRET, AKAMAI_ACCESS_TOKEN.",
-            file=sys.stderr,
-        )
+        print("Missing EdgeGrid env vars. Please set:", file=sys.stderr)
+        print("  AKAMAI_HOST", file=sys.stderr)
+        print("  AKAMAI_CLIENT_TOKEN", file=sys.stderr)
+        print("  AKAMAI_CLIENT_SECRET", file=sys.stderr)
+        print("  AKAMAI_ACCESS_TOKEN", file=sys.stderr)
         sys.exit(2)
+    
+    # Validate host format
+    if not host.startswith(('akab-', 'akamai')):
+        print(f"Warning: AKAMAI_HOST '{host}' doesn't look like a standard Akamai hostname", file=sys.stderr)
+    
+    print(f"Connecting to Akamai host: {host}", file=sys.stderr)
+    if account_switch_key:
+        print(f"Using account switch key: {account_switch_key[:8]}...", file=sys.stderr)
+    
     auth = EdgegridAuthEnv(host, client_token, client_secret, access_token)
     base = f"https://{host}"
     return ApiContext(base_url=base, auth=auth, account_switch_key=account_switch_key)
@@ -461,12 +482,32 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="Enumerate Edge DNS zones, GTM, EdgeWorkers, Cloudlets, Cloud Wrapper",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug output and detailed error information",
+    )
 
     args = parser.parse_args(argv)
 
+    if args.debug:
+        print("=== Debug Mode Enabled ===", file=sys.stderr)
+        print(f"Output directory: {args.out_dir}", file=sys.stderr)
+        print(f"Include rules: {args.include_rules}", file=sys.stderr)
+        print(f"Include products: {args.include_products}", file=sys.stderr)
+        print(f"Account switch key: {args.account_switch_key[:8] if args.account_switch_key else 'None'}...", file=sys.stderr)
+
     api = build_api_context(args.edgerc_section, args.account_switch_key)
 
-    properties = papi_list_properties(api)
+    try:
+        properties = papi_list_properties(api)
+    except Exception as e:
+        print(f"Failed to fetch properties: {e}", file=sys.stderr)
+        if args.debug:
+            print("Full error details:", file=sys.stderr)
+            import traceback
+            traceback.print_exc()
+        sys.exit(1)
 
     host_records: List[HostnameRecord] = []
     parsed_by_property: Dict[str, Dict[str, Any]] = {}
