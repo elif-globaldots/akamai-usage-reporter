@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="akamai-usage-reporter",
-    version="1.0.0",
+    version="1.1.0",
     author="Akamai Usage Reporter",
     description="A CLI tool that analyzes Akamai account usage and generates Cloudflare migration checklists",
     long_description=long_description,
