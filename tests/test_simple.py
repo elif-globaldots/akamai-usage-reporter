@@ -28,4 +28,3 @@ def test_list_operations():
     assert len(test_list) == 3
     assert test_list[0] == 1
     assert sum(test_list) == 6
-

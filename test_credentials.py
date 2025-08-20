@@ -8,7 +8,7 @@ import sys
 import requests
 
 # Add the parent directory to path to import the auto-loading function
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'akamai_usage_reporter'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "akamai_usage_reporter"))
 
 # This will auto-load the environment
 try:
@@ -17,7 +17,13 @@ except ImportError:
     # Fallback: try to import directly
     try:
         import importlib.util
-        spec = importlib.util.spec_from_file_location("main_module", os.path.join(os.path.dirname(__file__), 'akamai_usage_reporter', '__main__.py'))
+
+        spec = importlib.util.spec_from_file_location(
+            "main_module",
+            os.path.join(
+                os.path.dirname(__file__), "akamai_usage_reporter", "__main__.py"
+            ),
+        )
         main_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(main_module)
         auto_load_environment = main_module.auto_load_environment
@@ -32,34 +38,37 @@ except ImportError:
     print("❌ Could not import EdgeGrid. Make sure you're in the virtual environment.")
     sys.exit(1)
 
+
 def test_credentials():
     """Test EdgeGrid credentials and basic API connectivity."""
-    
+
     # Check environment variables
     host = os.environ.get("AKAMAI_HOST")
     client_token = os.environ.get("AKAMAI_CLIENT_TOKEN")
     client_secret = os.environ.get("AKAMAI_CLIENT_SECRET")
     access_token = os.environ.get("AKAMAI_ACCESS_TOKEN")
     account_switch_key = os.environ.get("AKAMAI_ACCOUNT_SWITCH_KEY")
-    
+
     print("=== EdgeGrid Credentials Check ===")
     print(f"AKAMAI_HOST: {'✓ Set' if host else '✗ Missing'}")
     print(f"AKAMAI_CLIENT_TOKEN: {'✓ Set' if client_token else '✗ Missing'}")
     print(f"AKAMAI_CLIENT_SECRET: {'✓ Set' if client_secret else '✗ Missing'}")
     print(f"AKAMAI_ACCESS_TOKEN: {'✓ Set' if access_token else '✗ Missing'}")
-    print(f"AKAMAI_ACCOUNT_SWITCH_KEY: {'✓ Set' if account_switch_key else '✗ Not set (optional)'}")
-    
+    print(
+        f"AKAMAI_ACCOUNT_SWITCH_KEY: {'✓ Set' if account_switch_key else '✗ Not set (optional)'}"
+    )
+
     if not all([host, client_token, client_secret, access_token]):
         print("\n❌ Missing required credentials!")
         return False
-    
+
     print(f"\nHost: {host}")
     print(f"Client Token: {client_token[:8]}...")
     print(f"Access Token: {access_token[:8]}...")
-    
+
     # Test basic connectivity
     print("\n=== Testing API Connectivity ===")
-    
+
     try:
         # Create session with EdgeGrid auth
         session = requests.Session()
@@ -68,47 +77,50 @@ def test_credentials():
             client_secret=client_secret,
             access_token=access_token,
         )
-        
+
         # Test basic PAPI endpoint
         url = f"https://{host}/papi/v1/properties"
         params = {}
         if account_switch_key:
             params["accountSwitchKey"] = account_switch_key
-        
+
         print(f"Testing URL: {url}")
         print(f"Params: {params}")
-        
+
         response = session.get(url, params=params, timeout=30)
-        
+
         print(f"Response Status: {response.status_code}")
         print(f"Response Headers: {dict(response.headers)}")
-        
+
         if response.status_code == 200:
             data = response.json()
             print(f"✓ API call successful!")
-            print(f"Properties found: {len(data.get('properties', {}).get('items', []))}")
+            print(
+                f"Properties found: {len(data.get('properties', {}).get('items', []))}"
+            )
             return True
         else:
             print(f"❌ API call failed with status {response.status_code}")
             print(f"Response: {response.text}")
             return False
-            
+
     except Exception as e:
         print(f"❌ Error testing API: {e}")
         return False
+
 
 def main():
     """Main function."""
     print("Akamai EdgeGrid Credentials Test")
     print("=" * 40)
-    
+
     # Auto-load environment variables
     try:
         auto_load_environment()
     except Exception as e:
         print(f"Warning: Could not auto-load environment: {e}")
         print("Continuing with manually set environment variables...")
-    
+
     if test_credentials():
         print("\n🎉 Credentials are working! You can now run the main script.")
     else:
@@ -119,13 +131,14 @@ def main():
         print("3. Invalid tokens or expired access")
         print("4. Network connectivity issues")
         print("5. Account permissions")
-        
+
         print("\nTo set credentials:")
         print("export AKAMAI_HOST='your-host.akamaiapis.net'")
         print("export AKAMAI_CLIENT_TOKEN='your-client-token'")
         print("export AKAMAI_CLIENT_SECRET='your-client-secret'")
         print("export AKAMAI_ACCESS_TOKEN='your-access-token'")
         print("export AKAMAI_ACCOUNT_SWITCH_KEY='your-account-switch-key'  # Optional")
+
 
 if __name__ == "__main__":
     main()

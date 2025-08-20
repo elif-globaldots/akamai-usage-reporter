@@ -17,26 +17,28 @@ import tldextract
 def auto_load_environment():
     """Automatically load virtual environment and .env file if needed."""
     # Check if we're in a virtual environment
-    if not hasattr(sys, 'real_prefix') and not (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+    if not hasattr(sys, "real_prefix") and not (
+        hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix
+    ):
         # Not in a virtual environment, try to activate it
-        venv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.venv')
+        venv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".venv")
         if os.path.exists(venv_path):
             print("Auto-activating virtual environment...", file=sys.stderr)
             # Add venv site-packages to Python path
-            site_packages = os.path.join(venv_path, 'lib', 'python3.9', 'site-packages')
+            site_packages = os.path.join(venv_path, "lib", "python3.9", "site-packages")
             if os.path.exists(site_packages):
                 sys.path.insert(0, site_packages)
                 print(f"Added {site_packages} to Python path", file=sys.stderr)
-    
+
     # Load environment variables from akamai.env file
-    env_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'akamai.env')
+    env_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "akamai.env")
     if os.path.exists(env_file):
         print(f"Loading environment variables from {env_file}", file=sys.stderr)
-        with open(env_file, 'r') as f:
+        with open(env_file, "r") as f:
             for line in f:
                 line = line.strip()
-                if line and not line.startswith('#') and '=' in line:
-                    key, value = line.split('=', 1)
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
                     os.environ[key] = value
                     print(f"Loaded: {key}", file=sys.stderr)
     else:
@@ -98,84 +100,90 @@ class ApiContext:
 def papi_list_properties(api: ApiContext) -> List[Dict[str, Any]]:
     try:
         print("Fetching properties from PAPI...", file=sys.stderr)
-        
+
         # First, try to get contracts and groups to find valid IDs
         print("Getting contracts and groups...", file=sys.stderr)
         contracts_data = api.get("papi/v1/contracts")
         contracts = contracts_data.get("contracts", {}).get("items", [])
-        
+
         if not contracts:
             print("No contracts found", file=sys.stderr)
             return []
-        
+
         # Find the best working contract-group combination
         print("Finding working contract-group combination...", file=sys.stderr)
-        
+
         # Get all groups to find valid combinations
         groups_data = api.get("papi/v1/groups")
         groups = groups_data.get("groups", {}).get("items", [])
-        
+
         if not groups:
             print("No groups found", file=sys.stderr)
             return []
-        
+
         # Find a working combination (prioritize ones with properties)
         working_combination = None
-        
+
         for contract in contracts:
             contract_id = contract.get("contractId")
-            
+
             for group in groups:
                 group_id = group.get("groupId")
                 group_contracts = group.get("contractIds", [])
-                
+
                 # Check if this group can be used with this contract
                 if contract_id in group_contracts:
-                    print(f"Testing contract {contract_id} with group {group_id}...", file=sys.stderr)
-                    
+                    print(
+                        f"Testing contract {contract_id} with group {group_id}...",
+                        file=sys.stderr,
+                    )
+
                     try:
                         # Test if this combination works
-                        test_data = api.get("papi/v1/properties", params={
-                            "contractId": contract_id,
-                            "groupId": group_id
-                        })
-                        
+                        test_data = api.get(
+                            "papi/v1/properties",
+                            params={"contractId": contract_id, "groupId": group_id},
+                        )
+
                         properties = test_data.get("properties", {}).get("items", [])
                         if properties:
                             working_combination = {
                                 "contractId": contract_id,
                                 "groupId": group_id,
-                                "propertiesCount": len(properties)
+                                "propertiesCount": len(properties),
                             }
-                            print(f"✓ Found working combination: {contract_id} + {group_id} ({len(properties)} properties)", file=sys.stderr)
+                            print(
+                                f"✓ Found working combination: {contract_id} + {group_id} ({len(properties)} properties)",
+                                file=sys.stderr,
+                            )
                             break
                     except Exception:
                         continue
-            
+
             if working_combination:
                 break
-        
+
         if not working_combination:
             print("No working contract-group combinations found", file=sys.stderr)
             return []
-        
+
         contract_id = working_combination["contractId"]
         group_id = working_combination["groupId"]
-        
+
         print(f"Using contract: {contract_id} with group: {group_id}", file=sys.stderr)
-        
+
         # Now call properties with required parameters
-        data = api.get("papi/v1/properties", params={
-            "contractId": contract_id,
-            "groupId": group_id
-        })
-        
+        data = api.get(
+            "papi/v1/properties",
+            params={"contractId": contract_id, "groupId": group_id},
+        )
+
         properties = data.get("properties", {}).get("items", [])
         print(f"Found {len(properties)} properties", file=sys.stderr)
         return properties
     except Exception as e:
         print(f"Error fetching properties: {e}", file=sys.stderr)
-        if hasattr(e, 'response') and hasattr(e.response, 'status_code'):
+        if hasattr(e, "response") and hasattr(e.response, "status_code"):
             print(f"HTTP Status: {e.response.status_code}", file=sys.stderr)
             print(f"Response: {e.response.text}", file=sys.stderr)
         raise
@@ -541,7 +549,7 @@ def build_api_context(
     client_token = env_or_none("AKAMAI_CLIENT_TOKEN")
     client_secret = env_or_none("AKAMAI_CLIENT_SECRET")
     access_token = env_or_none("AKAMAI_ACCESS_TOKEN")
-    
+
     if not all([host, client_token, client_secret, access_token]):
         print("Missing EdgeGrid env vars. Please set:", file=sys.stderr)
         print("  AKAMAI_HOST", file=sys.stderr)
@@ -549,15 +557,18 @@ def build_api_context(
         print("  AKAMAI_CLIENT_SECRET", file=sys.stderr)
         print("  AKAMAI_ACCESS_TOKEN", file=sys.stderr)
         sys.exit(2)
-    
+
     # Validate host format
-    if not host.startswith(('akab-', 'akamai')):
-        print(f"Warning: AKAMAI_HOST '{host}' doesn't look like a standard Akamai hostname", file=sys.stderr)
-    
+    if not host.startswith(("akab-", "akamai")):
+        print(
+            f"Warning: AKAMAI_HOST '{host}' doesn't look like a standard Akamai hostname",
+            file=sys.stderr,
+        )
+
     print(f"Connecting to Akamai host: {host}", file=sys.stderr)
     if account_switch_key:
         print(f"Using account switch key: {account_switch_key[:8]}...", file=sys.stderr)
-    
+
     auth = EdgegridAuthEnv(host, client_token, client_secret, access_token)
     base = f"https://{host}"
     return ApiContext(base_url=base, auth=auth, account_switch_key=account_switch_key)
@@ -601,7 +612,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"Output directory: {args.out_dir}", file=sys.stderr)
         print(f"Include rules: {args.include_rules}", file=sys.stderr)
         print(f"Include products: {args.include_products}", file=sys.stderr)
-        print(f"Account switch key: {args.account_switch_key[:8] if args.account_switch_key else 'None'}...", file=sys.stderr)
+        print(
+            f"Account switch key: {args.account_switch_key[:8] if args.account_switch_key else 'None'}...",
+            file=sys.stderr,
+        )
 
     api = build_api_context(args.edgerc_section, args.account_switch_key)
 
@@ -612,6 +626,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         if args.debug:
             print("Full error details:", file=sys.stderr)
             import traceback
+
             traceback.print_exc()
         sys.exit(1)
 
