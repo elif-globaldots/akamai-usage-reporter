@@ -590,17 +590,21 @@ def generate_checklist(
     lines.append("- Recreate cache rules and overrides")
     lines.append("- Recreate redirects (Transform or Rulesets)")
     lines.append("- Recreate header rules; enable HSTS if present")
-    
+
     if include_products:
         lines.append("")
         lines.append("## Additional Akamai Features to Migrate")
         lines.append("### Rate Limiting")
         lines.append("- Review rate limiting policies in rate_limiting_policies.csv")
-        lines.append("- Recreate rate limiting rules in Cloudflare using Rate Limiting Rules")
+        lines.append(
+            "- Recreate rate limiting rules in Cloudflare using Rate Limiting Rules"
+        )
         lines.append("")
         lines.append("### Network Lists & Security")
         lines.append("- Review network lists in network_lists.csv")
-        lines.append("- Recreate IP reputation lists in Cloudflare using IP Access Rules")
+        lines.append(
+            "- Recreate IP reputation lists in Cloudflare using IP Access Rules"
+        )
         lines.append("- Review Kona Site Defender configs in kona_site_defender.csv")
         lines.append("- Review Prolexic DDoS settings in prolexic_ddos.csv")
         lines.append("- Review Client Reputation policies in client_reputation.csv")
@@ -612,7 +616,7 @@ def generate_checklist(
         lines.append("- Review API Rate Limiting in api_rate_limiting.csv")
         lines.append("- Consider Cloudflare Workers for API logic")
         lines.append("- Use Cloudflare API Shield for API security")
-    
+
     lines.append("")
     lines.append("## Hostnames")
     for hr in sorted(host_records, key=lambda r: r.hostname):
@@ -621,7 +625,9 @@ def generate_checklist(
         )
     lines.append("")
     lines.append("## Rules summary")
-    for hr in sorted(host_records, key=lambda r: (r.property_name, hr.property_version)):
+    for hr in sorted(
+        host_records, key=lambda r: (r.property_name, hr.property_version)
+    ):
         key = f"{hr.property_id}:{hr.property_version}"
         parsed = parsed_by_property.get(key)
         if not parsed:
@@ -1038,7 +1044,13 @@ def main(argv: Optional[List[str]] = None) -> int:
                 ],
                 "cloud_wrapper.csv": ["id", "name", "status"],
                 "rate_limiting_policies.csv": ["policy_id", "name", "status", "type"],
-                "network_lists.csv": ["unique_id", "name", "type", "element_count", "sync_point"],
+                "network_lists.csv": [
+                    "unique_id",
+                    "name",
+                    "type",
+                    "element_count",
+                    "sync_point",
+                ],
                 "kona_site_defender.csv": ["site_id", "site_name", "status", "type"],
                 "prolexic_ddos.csv": ["id", "name", "status", "type"],
                 "client_reputation.csv": ["policy_id", "name", "status", "type"],
@@ -1240,7 +1252,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         host_by_apex[hr.apex].append(hr)
     checklists_dir = os.path.join(out_dir, "checklists")
     for apex, records in host_by_apex.items():
-        content = generate_checklist(apex, records, parsed_by_property, cps_by_sni, args.include_products)
+        content = generate_checklist(
+            apex, records, parsed_by_property, cps_by_sni, args.include_products
+        )
         write_text(os.path.join(checklists_dir, f"{apex}.md"), content)
 
     print(f"Wrote reports to {os.path.abspath(out_dir)}")
