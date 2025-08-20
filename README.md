@@ -82,7 +82,16 @@ out/
 ├── edgedns_zones.csv        # Edge DNS zones
 ├── edgeworkers.csv          # EdgeWorkers
 ├── cloudlets_policies.csv   # Cloudlets policies
-└── cloud_wrapper.csv        # Cloud Wrapper containers
+├── cloud_wrapper.csv        # Cloud Wrapper containers
+├── rate_limiting_policies.csv  # Rate limiting policies
+├── network_lists.csv        # Network lists (IP reputation, geo restrictions)
+├── kona_site_defender.csv   # Kona Site Defender configurations
+├── prolexic_ddos.csv        # Prolexic DDoS protection settings
+├── client_reputation.csv    # Client reputation policies
+├── adaptive_security.csv    # Adaptive Security Engine rules
+├── api_gateway.csv          # API Gateway configurations
+├── api_security.csv         # API Security policies
+└── api_rate_limiting.csv    # API Rate Limiting policies
 ```
 
 ## 🔧 Command Line Options
@@ -117,8 +126,13 @@ out/
 - **Maps**: CIDR, Geographic, and AS number mappings
 
 ### Additional Products
-- **EdgeWorkers**: JavaScript edge computing functions
-- **Cloudlets**: Redirect, A/B testing, and other policies
+- **EdgeWorkers**: Edge computing functions and configurations
+- **Cloudlets**: Policy-based traffic management
+- **Cloud Wrapper**: Container configurations
+- **Rate Limiting**: Traffic control policies and rules
+- **Network Lists**: IP reputation lists, geographic restrictions, custom lists
+- **Advanced Security**: Kona Site Defender, Prolexic DDoS, Client Reputation, Adaptive Security Engine
+- **API Acceleration**: API Gateway, API Security, API Rate Limiting
 - **Cloud Wrapper**: Container configurations
 
 ## 🎯 Cloudflare Migration Mapping

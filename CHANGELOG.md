@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-01-XX
+
+### Added
+- **Rate Limiting Support**: Comprehensive analysis of Akamai rate limiting policies
+- **Network Lists Analysis**: IP reputation lists, geographic restrictions, and custom network lists
+- **Advanced Security Features**: Kona Site Defender, Prolexic DDoS, Client Reputation, Adaptive Security Engine
+- **API Acceleration**: API Gateway, API Security, and API Rate Limiting support
+- **Enhanced Migration Checklists**: Detailed guidance for migrating advanced Akamai features to Cloudflare
+
+### Improved
+- **Migration Planning**: More comprehensive coverage of Akamai features for Cloudflare migration
+- **Security Analysis**: Better visibility into advanced security configurations
+- **API Management**: Complete API-related feature discovery and documentation
+
+### Technical
+- New API endpoints for rate limiting, network lists, and advanced security
+- Enhanced CSV output with additional product data
+- Improved checklist generation with feature-specific migration guidance
+
 ## [1.1.0] - 2025-08-19
 
 ### Added

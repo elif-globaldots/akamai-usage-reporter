@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "akamai-usage-reporter"
-version = "1.1.0"
+version = "1.2.0"
 description = "A CLI tool that analyzes Akamai account usage and generates Cloudflare migration checklists"
 readme = "README.md"
 license = "MIT"

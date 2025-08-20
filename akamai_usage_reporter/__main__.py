@@ -460,6 +460,87 @@ def cloud_wrapper_list(api: ApiContext) -> List[Dict[str, Any]]:
     return []
 
 
+def rate_limiting_list_policies(api: ApiContext) -> List[Dict[str, Any]]:
+    """List Rate Limiting policies."""
+    try:
+        data = api.get("rate-limiting/v1/policies")
+        return data.get("policies", []) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+
+def network_lists_list(api: ApiContext) -> List[Dict[str, Any]]:
+    """List Network Lists (IP reputation, geo restrictions, etc.)."""
+    try:
+        data = api.get("network-list/v2/network-lists")
+        return data.get("networkLists", []) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+
+def kona_site_defender_list_configs(api: ApiContext) -> List[Dict[str, Any]]:
+    """List Kona Site Defender security configurations."""
+    try:
+        data = api.get("siteshield/v1/sites")
+        return data.get("sites", []) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+
+def prolexic_list_configs(api: ApiContext) -> List[Dict[str, Any]]:
+    """List Prolexic DDoS protection configurations."""
+    try:
+        data = api.get("prolexic/v1/overview")
+        return data.get("data", []) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+
+def client_reputation_list_policies(api: ApiContext) -> List[Dict[str, Any]]:
+    """List Client Reputation policies."""
+    try:
+        data = api.get("client-reputation/v1/policies")
+        return data.get("policies", []) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+
+def adaptive_security_list_rules(api: ApiContext) -> List[Dict[str, Any]]:
+    """List Adaptive Security Engine rules."""
+    try:
+        data = api.get("adaptive-security/v1/rules")
+        return data.get("rules", []) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+
+def api_gateway_list_configs(api: ApiContext) -> List[Dict[str, Any]]:
+    """List API Gateway configurations."""
+    try:
+        data = api.get("api-gateway/v1/configurations")
+        return data.get("configurations", []) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+
+def api_security_list_policies(api: ApiContext) -> List[Dict[str, Any]]:
+    """List API Security policies."""
+    try:
+        data = api.get("api-security/v1/policies")
+        return data.get("policies", []) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+
+def api_rate_limiting_list_policies(api: ApiContext) -> List[Dict[str, Any]]:
+    """List API Rate Limiting policies."""
+    try:
+        data = api.get("api-rate-limiting/v1/policies")
+        return data.get("policies", []) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+
 @dataclass
 class HostnameRecord:
     apex: str
@@ -495,6 +576,7 @@ def generate_checklist(
     host_records: List[HostnameRecord],
     parsed_by_property: Dict[str, Dict[str, Any]],
     cps_by_sni: Dict[str, List[str]],
+    include_products: bool = False,
 ) -> str:
     lines: List[str] = []
     lines.append(f"# Cloudflare migration checklist for {apex}")
@@ -508,6 +590,29 @@ def generate_checklist(
     lines.append("- Recreate cache rules and overrides")
     lines.append("- Recreate redirects (Transform or Rulesets)")
     lines.append("- Recreate header rules; enable HSTS if present")
+    
+    if include_products:
+        lines.append("")
+        lines.append("## Additional Akamai Features to Migrate")
+        lines.append("### Rate Limiting")
+        lines.append("- Review rate limiting policies in rate_limiting_policies.csv")
+        lines.append("- Recreate rate limiting rules in Cloudflare using Rate Limiting Rules")
+        lines.append("")
+        lines.append("### Network Lists & Security")
+        lines.append("- Review network lists in network_lists.csv")
+        lines.append("- Recreate IP reputation lists in Cloudflare using IP Access Rules")
+        lines.append("- Review Kona Site Defender configs in kona_site_defender.csv")
+        lines.append("- Review Prolexic DDoS settings in prolexic_ddos.csv")
+        lines.append("- Review Client Reputation policies in client_reputation.csv")
+        lines.append("- Review Adaptive Security rules in adaptive_security.csv")
+        lines.append("")
+        lines.append("### API Acceleration")
+        lines.append("- Review API Gateway configs in api_gateway.csv")
+        lines.append("- Review API Security policies in api_security.csv")
+        lines.append("- Review API Rate Limiting in api_rate_limiting.csv")
+        lines.append("- Consider Cloudflare Workers for API logic")
+        lines.append("- Use Cloudflare API Shield for API security")
+    
     lines.append("")
     lines.append("## Hostnames")
     for hr in sorted(host_records, key=lambda r: r.hostname):
@@ -516,7 +621,7 @@ def generate_checklist(
         )
     lines.append("")
     lines.append("## Rules summary")
-    for hr in sorted(host_records, key=lambda r: (r.property_name, r.property_version)):
+    for hr in sorted(host_records, key=lambda r: (r.property_name, hr.property_version)):
         key = f"{hr.property_id}:{hr.property_version}"
         parsed = parsed_by_property.get(key)
         if not parsed:
@@ -764,6 +869,110 @@ def main(argv: Optional[List[str]] = None) -> int:
             for c in cw
         ]
 
+        # Rate Limiting
+        rate_limiting = rate_limiting_list_policies(api)
+        products_rows["rate_limiting_policies.csv"] = [
+            [
+                rl.get("policyId") or rl.get("id"),
+                rl.get("name"),
+                rl.get("status") or rl.get("state"),
+                rl.get("type") or "",
+            ]
+            for rl in rate_limiting
+        ]
+
+        # Network Lists
+        network_lists = network_lists_list(api)
+        products_rows["network_lists.csv"] = [
+            [
+                nl.get("uniqueId") or nl.get("id"),
+                nl.get("name"),
+                nl.get("type") or "",
+                nl.get("elementCount", 0),
+                nl.get("syncPoint") or "",
+            ]
+            for nl in network_lists
+        ]
+
+        # Advanced Security Features
+        kona_configs = kona_site_defender_list_configs(api)
+        products_rows["kona_site_defender.csv"] = [
+            [
+                k.get("siteId") or k.get("id"),
+                k.get("siteName") or k.get("name"),
+                k.get("status") or "",
+                k.get("type") or "",
+            ]
+            for k in kona_configs
+        ]
+
+        prolexic_configs = prolexic_list_configs(api)
+        products_rows["prolexic_ddos.csv"] = [
+            [
+                p.get("id"),
+                p.get("name") or p.get("title"),
+                p.get("status") or "",
+                p.get("type") or "",
+            ]
+            for p in prolexic_configs
+        ]
+
+        client_reputation = client_reputation_list_policies(api)
+        products_rows["client_reputation.csv"] = [
+            [
+                cr.get("policyId") or cr.get("id"),
+                cr.get("name"),
+                cr.get("status") or "",
+                cr.get("type") or "",
+            ]
+            for cr in client_reputation
+        ]
+
+        adaptive_security = adaptive_security_list_rules(api)
+        products_rows["adaptive_security.csv"] = [
+            [
+                asr.get("ruleId") or asr.get("id"),
+                asr.get("name"),
+                asr.get("status") or "",
+                asr.get("type") or "",
+            ]
+            for asr in adaptive_security
+        ]
+
+        # API Acceleration Features
+        api_gateway = api_gateway_list_configs(api)
+        products_rows["api_gateway.csv"] = [
+            [
+                ag.get("configurationId") or ag.get("id"),
+                ag.get("name"),
+                ag.get("status") or "",
+                ag.get("type") or "",
+            ]
+            for ag in api_gateway
+        ]
+
+        api_security = api_security_list_policies(api)
+        products_rows["api_security.csv"] = [
+            [
+                aps.get("policyId") or aps.get("id"),
+                aps.get("name"),
+                aps.get("status") or "",
+                aps.get("type") or "",
+            ]
+            for aps in api_security
+        ]
+
+        api_rate_limiting = api_rate_limiting_list_policies(api)
+        products_rows["api_rate_limiting.csv"] = [
+            [
+                arl.get("policyId") or arl.get("id"),
+                arl.get("name"),
+                arl.get("status") or "",
+                arl.get("type") or "",
+            ]
+            for arl in api_rate_limiting
+        ]
+
     # Write CSVs
     out_dir = args.out_dir
     usage_rows: List[List[Any]] = []
@@ -828,6 +1037,15 @@ def main(argv: Optional[List[str]] = None) -> int:
                     "status",
                 ],
                 "cloud_wrapper.csv": ["id", "name", "status"],
+                "rate_limiting_policies.csv": ["policy_id", "name", "status", "type"],
+                "network_lists.csv": ["unique_id", "name", "type", "element_count", "sync_point"],
+                "kona_site_defender.csv": ["site_id", "site_name", "status", "type"],
+                "prolexic_ddos.csv": ["id", "name", "status", "type"],
+                "client_reputation.csv": ["policy_id", "name", "status", "type"],
+                "adaptive_security.csv": ["rule_id", "name", "status", "type"],
+                "api_gateway.csv": ["configuration_id", "name", "status", "type"],
+                "api_security.csv": ["policy_id", "name", "status", "type"],
+                "api_rate_limiting.csv": ["policy_id", "name", "status", "type"],
             }[filename]
             write_csv(os.path.join(out_dir, filename), headers, rows)
 
@@ -1022,7 +1240,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         host_by_apex[hr.apex].append(hr)
     checklists_dir = os.path.join(out_dir, "checklists")
     for apex, records in host_by_apex.items():
-        content = generate_checklist(apex, records, parsed_by_property, cps_by_sni)
+        content = generate_checklist(apex, records, parsed_by_property, cps_by_sni, args.include_products)
         write_text(os.path.join(checklists_dir, f"{apex}.md"), content)
 
     print(f"Wrote reports to {os.path.abspath(out_dir)}")
