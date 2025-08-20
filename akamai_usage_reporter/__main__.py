@@ -3,6 +3,7 @@ import csv
 import json
 import os
 import sys
+import subprocess
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
@@ -11,6 +12,40 @@ import requests
 from requests.auth import AuthBase
 from akamai.edgegrid import EdgeGridAuth  # from edgegrid-python
 import tldextract
+
+
+def auto_load_environment():
+    """Automatically load virtual environment and .env file if needed."""
+    # Check if we're in a virtual environment
+    if not hasattr(sys, 'real_prefix') and not (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+        # Not in a virtual environment, try to activate it
+        venv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.venv')
+        if os.path.exists(venv_path):
+            print("Auto-activating virtual environment...", file=sys.stderr)
+            # Add venv site-packages to Python path
+            site_packages = os.path.join(venv_path, 'lib', 'python3.9', 'site-packages')
+            if os.path.exists(site_packages):
+                sys.path.insert(0, site_packages)
+                print(f"Added {site_packages} to Python path", file=sys.stderr)
+    
+    # Load environment variables from akamai.env file
+    env_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'akamai.env')
+    if os.path.exists(env_file):
+        print(f"Loading environment variables from {env_file}", file=sys.stderr)
+        with open(env_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ[key] = value
+                    print(f"Loaded: {key}", file=sys.stderr)
+    else:
+        print(f"Environment file not found: {env_file}", file=sys.stderr)
+        print("Please create akamai.env with your Akamai credentials", file=sys.stderr)
+
+
+# Auto-load environment when module is imported
+auto_load_environment()
 
 
 DEFAULT_TIMEOUT = (10, 60)
@@ -63,7 +98,78 @@ class ApiContext:
 def papi_list_properties(api: ApiContext) -> List[Dict[str, Any]]:
     try:
         print("Fetching properties from PAPI...", file=sys.stderr)
-        data = api.get("papi/v1/properties")
+        
+        # First, try to get contracts and groups to find valid IDs
+        print("Getting contracts and groups...", file=sys.stderr)
+        contracts_data = api.get("papi/v1/contracts")
+        contracts = contracts_data.get("contracts", {}).get("items", [])
+        
+        if not contracts:
+            print("No contracts found", file=sys.stderr)
+            return []
+        
+        # Find the best working contract-group combination
+        print("Finding working contract-group combination...", file=sys.stderr)
+        
+        # Get all groups to find valid combinations
+        groups_data = api.get("papi/v1/groups")
+        groups = groups_data.get("groups", {}).get("items", [])
+        
+        if not groups:
+            print("No groups found", file=sys.stderr)
+            return []
+        
+        # Find a working combination (prioritize ones with properties)
+        working_combination = None
+        
+        for contract in contracts:
+            contract_id = contract.get("contractId")
+            
+            for group in groups:
+                group_id = group.get("groupId")
+                group_contracts = group.get("contractIds", [])
+                
+                # Check if this group can be used with this contract
+                if contract_id in group_contracts:
+                    print(f"Testing contract {contract_id} with group {group_id}...", file=sys.stderr)
+                    
+                    try:
+                        # Test if this combination works
+                        test_data = api.get("papi/v1/properties", params={
+                            "contractId": contract_id,
+                            "groupId": group_id
+                        })
+                        
+                        properties = test_data.get("properties", {}).get("items", [])
+                        if properties:
+                            working_combination = {
+                                "contractId": contract_id,
+                                "groupId": group_id,
+                                "propertiesCount": len(properties)
+                            }
+                            print(f"✓ Found working combination: {contract_id} + {group_id} ({len(properties)} properties)", file=sys.stderr)
+                            break
+                    except Exception:
+                        continue
+            
+            if working_combination:
+                break
+        
+        if not working_combination:
+            print("No working contract-group combinations found", file=sys.stderr)
+            return []
+        
+        contract_id = working_combination["contractId"]
+        group_id = working_combination["groupId"]
+        
+        print(f"Using contract: {contract_id} with group: {group_id}", file=sys.stderr)
+        
+        # Now call properties with required parameters
+        data = api.get("papi/v1/properties", params={
+            "contractId": contract_id,
+            "groupId": group_id
+        })
+        
         properties = data.get("properties", {}).get("items", [])
         print(f"Found {len(properties)} properties", file=sys.stderr)
         return properties

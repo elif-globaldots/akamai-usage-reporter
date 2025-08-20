@@ -6,7 +6,31 @@ Test script to verify EdgeGrid credentials and debug API issues.
 import os
 import sys
 import requests
-from akamai.edgegrid import EdgeGridAuth
+
+# Add the parent directory to path to import the auto-loading function
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'akamai_usage_reporter'))
+
+# This will auto-load the environment
+try:
+    from akamai_usage_reporter.__main__ import auto_load_environment
+except ImportError:
+    # Fallback: try to import directly
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("main_module", os.path.join(os.path.dirname(__file__), 'akamai_usage_reporter', '__main__.py'))
+        main_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(main_module)
+        auto_load_environment = main_module.auto_load_environment
+    except Exception as e:
+        print(f"Warning: Could not auto-load environment: {e}")
+        auto_load_environment = lambda: None
+
+# Now import EdgeGrid after environment is loaded
+try:
+    from akamai.edgegrid import EdgeGridAuth
+except ImportError:
+    print("❌ Could not import EdgeGrid. Make sure you're in the virtual environment.")
+    sys.exit(1)
 
 def test_credentials():
     """Test EdgeGrid credentials and basic API connectivity."""
@@ -77,6 +101,13 @@ def main():
     """Main function."""
     print("Akamai EdgeGrid Credentials Test")
     print("=" * 40)
+    
+    # Auto-load environment variables
+    try:
+        auto_load_environment()
+    except Exception as e:
+        print(f"Warning: Could not auto-load environment: {e}")
+        print("Continuing with manually set environment variables...")
     
     if test_credentials():
         print("\n🎉 Credentials are working! You can now run the main script.")

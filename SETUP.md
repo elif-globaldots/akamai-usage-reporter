@@ -2,8 +2,16 @@
 
 ## Quick Start
 
-### 1. Set Environment Variables
+### 1. Set Environment Variables (Recommended Method)
 
+**Option A: Use the akamai.env file (Easiest)**
+```bash
+# Edit the akamai.env file with your credentials
+cp akamai.env.example akamai.env
+# Then edit akamai.env with your actual values
+```
+
+**Option B: Export in terminal (Alternative)**
 ```bash
 # Required credentials
 export AKAMAI_HOST="your-host.akamaiapis.net"
@@ -18,12 +26,14 @@ export AKAMAI_ACCOUNT_SWITCH_KEY="your-account-switch-key"
 ### 2. Test Your Credentials
 
 ```bash
+# The script will automatically load the virtual environment and akamai.env file
 python3 test_credentials.py
 ```
 
 ### 3. Run the Main Script
 
 ```bash
+# The script will automatically load the virtual environment and akamai.env file
 python3 -m akamai_usage_reporter --out-dir ./out --include-rules --include-products
 ```
 
@@ -84,9 +94,17 @@ pip install --upgrade urllib3
 
 4. **Download the credentials** and set them as environment variables
 
-## Example .env file
+## Auto-Loading Features
 
-Create a `.env` file in your project directory:
+The script now automatically:
+
+1. **Loads the virtual environment** - No need to manually activate `.venv`
+2. **Loads credentials from `akamai.env`** - No need to export variables manually
+3. **Provides detailed feedback** - Shows what's being loaded
+
+## Example akamai.env file
+
+Edit the `akamai.env` file in your project directory:
 
 ```bash
 AKAMAI_HOST=akab-ci6smccddm65vh2m-kmlfdngpberpgldx.luna.akamaiapis.net
@@ -96,11 +114,7 @@ AKAMAI_ACCESS_TOKEN=akab-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 AKAMAI_ACCOUNT_SWITCH_KEY=1-xxxxxxxx
 ```
 
-Then source it:
-
-```bash
-source .env
-```
+**No need to source it manually** - the script loads it automatically!
 
 ## Still Having Issues?
 
